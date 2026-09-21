@@ -6,6 +6,18 @@ public class SpotifySdkPlugin: NSObject, FlutterPlugin {
 
     private let remoteManager = RemoteManager.shared
     private lazy var authHandler = AuthHandler(remoteManager: remoteManager)
+    @available(iOS 13.0, *)
+    private var authorizationCodeHandler: AuthorizationCodeHandler {
+        if let existing = _authorizationCodeHandler as? AuthorizationCodeHandler {
+            return existing
+        }
+        let fresh = AuthorizationCodeHandler()
+        _authorizationCodeHandler = fresh
+        return fresh
+    }
+    // Untyped because a stored property cannot carry an availability
+    // annotation, and this plugin still builds for iOS 12.
+    private var _authorizationCodeHandler: AnyObject?
     private lazy var playerHandler = PlayerHandler(remoteManager: remoteManager)
     private lazy var libraryHandler = LibraryHandler(remoteManager: remoteManager)
     private lazy var imageHandler = ImageHandler(remoteManager: remoteManager)
@@ -51,8 +63,21 @@ public class SpotifySdkPlugin: NSObject, FlutterPlugin {
         // Auth & Session
         case SpotifySdkConstants.methodConnectToSpotify:
             authHandler.connectToSpotify(call: call, result: result)
-        case SpotifySdkConstants.methodGetAccessToken, SpotifySdkConstants.methodGetSwapToken:
+        case SpotifySdkConstants.methodGetAccessToken:
             authHandler.getAccessTokenOrSwapToken(call: call, result: result)
+        // Split from getAccessToken deliberately. That one wakes the App Remote
+        // and answers its access token; this one is the documented
+        // authorization-code request the Android plugin already performs, and
+        // the two are different kinds of credential.
+        case SpotifySdkConstants.methodGetSwapToken:
+            if #available(iOS 13.0, *) {
+                authorizationCodeHandler.requestAuthorizationCode(call: call, result: result)
+            } else {
+                result(SpotifyErrorMapper.makeError(
+                    code: "errorAuthorizing",
+                    message: "An authorization code needs iOS 13 or newer"
+                ))
+            }
         case SpotifySdkConstants.methodIsSpotifyInstalled:
             authHandler.isSpotifyInstalled(result: result)
         case SpotifySdkConstants.methodDisconnectFromSpotify:
@@ -128,6 +153,14 @@ public class SpotifySdkPlugin: NSObject, FlutterPlugin {
     }
 
     private func setAccessTokenFromURL(url: URL) {
+        // An authorization-code redirect carries a code and no access token, so
+        // letting the App Remote parse it would report an authentication error
+        // for an authorization that succeeded. Offered to the code handler
+        // first, which takes it only while one of its own is outstanding.
+        if #available(iOS 13.0, *), authorizationCodeHandler.handle(url: url) {
+            return
+        }
+
         guard let appRemote = remoteManager.appRemote else {
             remoteManager.connectionStatusHandler?.connectionResult?(FlutterError(code: "errorConnection", message: "AppRemote is null", details: nil))
             remoteManager.connectionStatusHandler?.tokenResult?(FlutterError(code: "errorConnection", message: "AppRemote is null", details: nil))
