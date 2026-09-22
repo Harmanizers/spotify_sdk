@@ -33,11 +33,17 @@ class RemoteManager {
         }
     }
 
-    fun String.checkAndSetPendingOperation(result: Result) {
-        if (pendingOperation == null) {
-            pendingOperation = PendingOperation(this, result)
-        } else {
-            result.error(SpotifySdkConstants.ERROR_PENDING_OPERATION, "Operation $this cannot be started because another operation is pending: ${pendingOperation?.methodName}", "")
-        }
+    /**
+     * Takes the slot for [result], failing whichever request held it. Only an
+     * activity result clears the slot, and a login activity left any other way
+     * never reports one, so refusing here stranded every later request.
+     */
+    fun String.takePendingOperation(result: Result) {
+        pendingOperation?.result?.error(
+            SpotifySdkConstants.ERROR_AUTHORIZING,
+            "Superseded by another authorization request",
+            ""
+        )
+        pendingOperation = PendingOperation(this, result)
     }
 }

@@ -63,6 +63,7 @@ object SpotifySdkConstants {
     // Errors
     const val ERROR_CONNECTING = "errorConnecting"
     const val ERROR_PENDING_OPERATION = "errorPendingOperation"
+    const val ERROR_AUTHORIZING = "errorAuthorizing"
     const val ERROR_SPOTIFY_APP_REMOTE_NULL = "spotifyAppRemoteNull"
     const val ERROR_CONNECT_SWITCH_TO_LOCAL_DEVICE = "errorConnectSwitchToLocalDevice"
     const val ERROR_CROSSFADE_STATE = "crossfadeStateError"

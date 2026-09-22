@@ -72,7 +72,7 @@ class AuthHandler(private val remoteManager: RemoteManager) {
             return
         }
         val scopeArray = scope?.split(",")?.toTypedArray()
-        with(remoteManager) { SpotifySdkConstants.METHOD_GET_ACCESS_TOKEN.checkAndSetPendingOperation(result) }
+        with(remoteManager) { SpotifySdkConstants.METHOD_GET_ACCESS_TOKEN.takePendingOperation(result) }
 
         val builder = AuthorizationRequest.Builder(clientId, AuthorizationResponse.Type.TOKEN, redirectUrl)
         builder.setScopes(scopeArray)
@@ -91,7 +91,7 @@ class AuthHandler(private val remoteManager: RemoteManager) {
             return
         }
         val scopeArray = scope?.split(",")?.toTypedArray()
-        with(remoteManager) { SpotifySdkConstants.METHOD_GET_SWAP_TOKEN.checkAndSetPendingOperation(result) }
+        with(remoteManager) { SpotifySdkConstants.METHOD_GET_SWAP_TOKEN.takePendingOperation(result) }
 
         val builder = AuthorizationRequest.Builder(clientId, AuthorizationResponse.Type.CODE, redirectUrl)
         builder.setScopes(scopeArray)
