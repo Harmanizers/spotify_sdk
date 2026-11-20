@@ -77,7 +77,7 @@ struct State {
 
     /// The SDK headers declare every property nonnull, so Swift reads one with
     /// no nil check: a nil URL traps in the bridge, and a nil object is
-    /// undefined behaviour that crashes an unoptimized build. Reading through
+    /// undefined behavior that crashes an unoptimized build. Reading through
     /// `perform(_:)` makes the nil visible. A nil NSString needs none of this;
     /// it bridges to "".
     private static func object<Value>(_ getter: Selector, of owner: NSObjectProtocol) -> Value? {
